@@ -1,0 +1,113 @@
+# =========================
+# Build & Output
+# =========================
+target/
+build/
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# =========================
+# Maven Wrapper
+# =========================
+.mvn/wrapper/maven-wrapper.jar
+HELP.md
+
+# =========================
+# Spring Tool Suite (STS)
+# =========================
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# =========================
+# IntelliJ IDEA
+# =========================
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# =========================
+# NetBeans
+# =========================
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# OS Junk Files
+# =========================
+.DS_Store
+Thumbs.db
+*~
+
+# =========================
+# Logs & Temp
+# =========================
+*.log
+*.tmp
+*.swp
+
+# =========================
+# Packaged Files
+# =========================
+*.jar
+*.war
+*.ear
+
+# =========================
+# Databases
+# =========================
+*.db
+*.sqlite
+*.h2.db
+*.mv.db
+
+# =========================
+# PostgreSQL
+# =========================
+pgdata/
+*.sql
+*.dump
+
+# =========================
+# Docker
+# =========================
+docker-compose.override.yml
+.docker/
+.dockerignore
+
+# =========================
+# AWS & Cloud
+# =========================
+.aws/
+*.pem
+*.key
+*.crt
+*.p12
+*.tfstate
+*.tfstate.backup
+
+# =========================
+# Secrets & Configs
+# =========================
+application-*.yml
+application-*.yaml
+application-*.properties
+.env
+.env.*
+secrets.yml
+secrets.json
