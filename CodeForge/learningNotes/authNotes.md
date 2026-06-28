@@ -155,3 +155,175 @@ AuthService.register()
     * **Mapper** → Converts DTO to Entity.
     * **Service** → Applies business logic and completes the Entity.
     * **Repository** → Saves the fully prepared Entity to the database.
+
+# 🟢 config class
+
+* `PasswordEncoder` is an interface used to hash and verify passwords.
+
+* We return `new BCryptPasswordEncoder()` because it's a secure implementation of that interface.
+
+* Declaring the return type as `PasswordEncoder` keeps the code flexible, while `BCryptPasswordEncoder` provides the actual hashing logic. We have other implementations as well.
+
+* A `@Bean` method is like a factory: it tells Spring how to create and register an object in the IoC container.
+
+* Usually, the return type is an interface (e.g., `PasswordEncoder`) so your code stays flexible.
+
+* Inside the method, you return a specific implementation (e.g., `new BCryptPasswordEncoder()`), which Spring will use whenever that interface is injected.
+
+---
+
+# 🟢 jwt
+
+We are entering JWT.
+
+* So there are 2 things:
+
+  * **JwtService** → For generating tokens, validating tokens, checking expiry, etc.
+  * **JwtFilter** → Takes the incoming request and calls `JwtService` to validate it, like a security guard, and decides whether to allow the request or not.
+
+* `JwtFilter` just extends the abstract class `OncePerRequestFilter` and implements its own logic. It simply sends the token to `JwtService`; `JwtService` does all the work.
+
+* JWT is common, not only for authentication. That's why it is placed in the `common` package and not the `auth` package.
+
+* So up till now, what all we did:
+
+  * First, Entity.
+  * Then Repository setup with some custom searching and validation.
+  * Then DTOs, like what all requests we can get (`RegisterRequest`, `AuthResponse`, etc.).
+  * Then Mapper. Mapper only converts DTO to User, like it builds half the object using the Builder Pattern.
+  * Later, that object is sent to the Service, which adds the remaining fields like encoded password, role, timestamps, etc.
+  * Then that object is stored in the Repository.
+  * Then come the Register and Login methods in the Service.
+  * They take DTO requests and return `AuthResponse`, which contains the JWT token.
+  * So now, coming to JWT, there are mainly 2 classes: `JwtFilter` and `JwtService`, with `JwtService` doing most of the work.
+
+---
+
+### Login Flow
+
+```
+Email + Password
+
+↓
+
+Verified
+
+↓
+
+JwtService.generateToken()
+
+↓
+
+Header
+
+Payload
+
+Signature
+
+↓
+
+JWT
+
+↓
+
+Client
+```
+
+---
+
+### Next Request Flow
+
+```
+Client
+
+↓
+
+JWT
+
+↓
+
+JwtFilter
+
+↓
+
+JwtService.extractEmail()
+
+↓
+
+JwtService.isTokenValid()
+
+↓
+
+Controller
+```
+
+---
+
+### Biggest Realization
+
+Now notice.
+
+`JwtService` doesn't know HTTP exists.
+
+It only knows:
+
+```
+Token
+
+↓
+
+Generate
+
+Extract
+
+Validate
+```
+
+Nothing else.
+
+`JwtFilter` doesn't know cryptography exists.
+
+It only knows:
+
+```
+Receive Request
+
+↓
+
+Extract Token
+
+↓
+
+Ask JwtService
+
+↓
+
+Continue Request
+```
+
+This separation is why Spring Security is so clean.
+
+---
+
+### ⚡ Summary Workflow
+
+* Secret (Base64 string) → `"c2VjcmV0"`.
+
+* So, in `application.properties`, the secret has to be Base64 encoded.
+
+* Decode → Raw bytes `[115, 101, 99, 114, 101, 116]`.
+
+* `hmacShaKeyFor()` → Wraps the bytes into a `SecretKey` object for HMAC.
+
+* `signWith()` → Uses HS256 to generate the signature from the Header + Payload + SecretKey (default is HS256).
+
+* JWT → Header (`alg = HS256`), Payload (claims), Signature (hash result).
+
+So:
+
+* `.decode()` = Unwrap Base64 text → Raw bytes.
+
+* `hmacShaKeyFor()` = Convert raw bytes → Usable HMAC key object.
+
+* `.signWith()` = Actually generates the signature using that key.
+
