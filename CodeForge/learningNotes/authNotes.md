@@ -327,3 +327,71 @@ So:
 
 * `.signWith()` = Actually generates the signature using that key.
 
+# 🟢 userdetailservice
+
+* First login → Spring Security uses `UserDetailsService` to check the database for the user's info (email, password hash, roles). That's the one time the DB is hit.
+
+* Subsequent requests → The client just sends the JWT in the header. Your JWT filter parses the token, verifies the signature, and checks the expiry/subject. No DB lookup is needed because all the required information is already inside the token.
+
+* 👉 So the DB is only involved at login, and after that the JWT itself is enough to validate requests.
+
+---
+
+```text
+Client
+│
+├── Email
+└── Password
+│
+▼
+AuthController
+│
+▼
+AuthService.login()
+│
+▼
+authenticationManager.authenticate(
+    email,
+    password
+)
+│
+▼
+CustomUserDetailsService.loadUserByUsername(email)
+│
+▼
+UserRepository.findByEmail(email)
+│
+▼
+User (implements UserDetails)
+│
+▼
+Spring PasswordEncoder.matches()
+│
+├── Wrong Password ❌ Exception
+│
+└── Correct Password ✅
+│
+▼
+Back to AuthService
+│
+▼
+UserRepository.findByEmail(email)
+│
+▼
+JwtService.generateToken(user)
+│
+▼
+Return JWT
+```
+
+---
+
+* `UserDetailsService` → Fetches the user from the database.
+
+* `PasswordEncoder` → Checks the password.
+
+* If the password is correct → Spring wraps the `UserDetails` into an `Authentication` object.
+
+* That `Authentication` object lives in the `SecurityContext` → Used for authorization checks (`hasRole`, `@PreAuthorize`, etc.).
+
+* With JWT → After login, you don't call the database again; you just rebuild the `Authentication` from the token. this thing check once ok
