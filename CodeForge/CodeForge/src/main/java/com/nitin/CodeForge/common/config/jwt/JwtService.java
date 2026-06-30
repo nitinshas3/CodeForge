@@ -68,7 +68,7 @@ public class JwtService {
     }
 
     //############ Parse all claims ######################
-    //so simple , jwts.parser creats a claim object , claims is a wrapper class , it only contains the payload of the jwt token jwt parser and jwt builder are differnt bulder buidls the token , this also verifies teh signature , only signature nothing more like exprity and all , this is the extra work this does , should have been done by validate function but this does it as extra work ,
+    //so simple , jwts.parser creats a claim object , claims is a wrapper class , it only contains the payload of the jwt token, jwt parser and jwt builder are differnt, bulder buidls the token , this also verifies teh signature , only signature nothing more like exprity and all , this is the extra work this does , should have been done by validate function but this does it as extra work ,
     private Claims extractAllClaims(String token) {
 
         return Jwts

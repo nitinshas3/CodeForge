@@ -1,26 +1,171 @@
-⚡ End‑to‑End Workflow
-Login request → hits filter (UsernamePasswordAuthenticationFilter).
+# ⚡ End-to-End Authentication Workflow
 
-Filter builds an Authentication object (with username + raw password).
+```text
+Login Request
+   │
+   ▼
+UsernamePasswordAuthenticationFilter
+(Builds Authentication object with email + raw password)
+   │
+   ▼
+AuthenticationManager
+(Starts authentication process)
+   │
+   ▼
+AuthenticationProvider
+(Checks if it can authenticate the request)
+   │
+   ▼
+CustomUserDetailsService.loadUserByUsername(email)
+   │
+   ▼
+UserDetails
+(User + hashed password + roles)
+   │
+   ▼
+PasswordEncoder.matches(rawPassword, hashedPassword)
+   │
+   ▼
+Authentication Successful
+(Returns authenticated Authentication object)
+   │
+   ▼
+SecurityContextHolder
+(Stores authenticated user)
+   │
+   ▼
+JwtService.generateToken(user)
+   │
+   ▼
+JWT Sent to Client
+   │
+   ▼
+──────────────────────────────────────────────────────
+Subsequent Requests
+   │
+   ▼
+JwtAuthenticationFilter
+   │
+   ├── Extract JWT
+   ├── Validate Token
+   ├── Load UserDetails
+   └── Store Authentication in SecurityContextHolder
+   │
+   ▼
+Controller
+```
 
-Passes it to AuthenticationManager.
+# 🔐 Spring Security + JWT Authentication Flow
 
-Manager loops through its list of AuthenticationProviders.
+```text
+SecurityConfig
+(Main security configuration / wires everything together)
 
-A provider (like DaoAuthenticationProvider) picks it up:
+                               
+        ┌───────────────────────┬───────────┴────────────┬─────────────────────┐
+        │                       │                        │
+        ▼                       ▼                        ▼
+PasswordEncoder         AuthenticationManager      SecurityFilterChain
+(BCrypt hashing)      (Starts authentication)   (Security rules & filters)
+                                │
+                                ▼
+                    AuthenticationProvider
+        (Uses UserDetailsService + PasswordEncoder)
+                                │
+                                ▼
+                  CustomUserDetailsService
+        (Implements UserDetailsService)
+        (Overrides loadUserByUsername())
+        (Loads user from DB using email)
+                                │
+                                ▼
+                       UserRepository
+        (Extends JpaRepository)
+        (Communicates with Database)
+                                │
+                                ▼
+                  User (implements UserDetails)
+        (Database Entity)
+        (Spring Security's authenticated user object)
+```
 
-Calls UserDetailsService.loadUserByUsername.
+---
 
-Gets UserDetails (username, hashed password, roles).
+# 🛡️ JWT Flow
 
-Uses PasswordEncoder.matches(raw, hashed) to verify.
+```text
+JwtAuthenticationFilter
+(Runs before every protected request)
+(Extracts JWT from Authorization Header)
+(Calls JwtService for validation)
+(Stores authenticated user in SecurityContext)
+                                │
+                                ▼
+                           JwtService
+(Generate JWT)
+(Extract Email)
+(Extract Claims)
+(Validate JWT)
+(Check Expiration)
+```
 
-If OK → returns a fully authenticated Authentication object.
+# 🔑 Login Authentication Flow
 
-Manager gives this back to the filter.
+```text
+Client
+   │
+   ▼
+AuthController
+   │
+   ▼
+AuthService
+   │
+   ▼
+AuthenticationManager.authenticate(email, password)
+   │
+   ▼
+AuthenticationProvider
+   │
+   ▼
+CustomUserDetailsService.loadUserByUsername(email)
+   │
+   ▼
+UserRepository.findByEmail(email)
+   │
+   ▼
+User (implements UserDetails)
+   │
+   ▼
+PasswordEncoder.matches(rawPassword, hashedPassword)
+   │
+   ▼
+Authentication Successful
+   │
+   ▼
+JwtService.generateToken(user)
+   │
+   ▼
+JWT Returned to Client
+```
 
-Filter puts it into SecurityContextHolder → user is now authenticated.
+# 🛡️ JWT Request Authentication Flow
 
-If you’re using JWT → you generate a token here and send it to the client.
-
-Subsequent requests → JWT filter validates token, rebuilds Authentication, puts it back into SecurityContext.
+```text
+Client
+   │
+   ▼
+GET /problems
+   │
+   ▼
+JwtAuthenticationFilter
+   │
+   ├── Read Authorization Header
+   ├── Extract JWT
+   ├── JwtService.extractEmail()
+   ├── CustomUserDetailsService.loadUserByUsername()
+   ├── JwtService.isTokenValid()
+   └── Store User in SecurityContextHolder
+   │
+   ▼
+Controller
+```
